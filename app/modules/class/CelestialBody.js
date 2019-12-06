@@ -8,10 +8,14 @@ export class CelestialBody extends MovingObject {
 		this.radius = radius;
 	}
 
-	draw(context) {
+	draw(context, camera) {
+		super.draw(context, camera);
+		let realPosition = this.position.getRealPosition(camera);
 		context.fillStyle = '#fff';
 		context.beginPath();
-		context.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI);
+		let adjustedRadius = this.radius / camera.scale;
+		let radius = adjustedRadius > 1 ? adjustedRadius : 1;
+		context.arc(realPosition.x, realPosition.y, radius, 0, 2 * Math.PI);
 		context.fill();
 	}
 

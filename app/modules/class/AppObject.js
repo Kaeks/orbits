@@ -2,13 +2,12 @@ export class AppObject {
 	position;
 	isVisible = true;
 
-	constructor(position, mass) {
+	constructor(position) {
 		this.position = position;
 	}
 
 	moveTo(position) {
 		this.position = position;
-		//console.log('Moved to x:' + position.x + ', y:' + position.y);
 	}
 
 	setVisible(newVal) {
@@ -29,7 +28,7 @@ export class AppObject {
 	update(mouseData) {
 	}
 
-	draw(context) {
+	draw(context, cameraPosition) {
 	}
 
 }

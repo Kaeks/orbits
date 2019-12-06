@@ -11,6 +11,11 @@ export class MovingObject extends AppObject {
 		this.velocity = startingVelocity || new Vector(0, 0, this.position);
 	}
 
+	moveTo(position) {
+		super.moveTo(position);
+		this.velocity.start = position;
+	}
+
 	/**
 	 * Applies a force to this object
 	 * @param {Number} force
@@ -33,5 +38,10 @@ export class MovingObject extends AppObject {
 	update(mouseData) {
 		super.update(mouseData);
 		this.applyVelocity();
+	}
+
+	draw(context, camera) {
+		super.draw(context, camera);
+		//this.velocity.multiply(10).draw(context, '#f00');
 	}
 }

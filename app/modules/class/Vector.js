@@ -24,11 +24,19 @@ export class Vector {
 	}
 
 	normalize() {
-		let length = this.getLength();
-		return new Vector(this.x / length, this.x / length, this.start);
+		return this.multiply(1 / this.getLength())
 	}
 
 	add(vector) {
 		return new Vector(this.x + vector.x, this.y + vector.y, this.start);
+	}
+
+	draw(context, color) {
+		context.strokeStyle = color;
+		context.beginPath();
+		context.moveTo(this.start.x, this.start.y);
+		let end = this.getEnd();
+		context.lineTo(end.x, end.y);
+		context.stroke();
 	}
 }
