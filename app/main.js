@@ -5,6 +5,8 @@ import {Vector} from './modules/class/Vector.js';
 import {Orbit} from './modules/class/Orbit.js';
 import {MovingObject} from './modules/class/MovingObject.js';
 import {Camera} from './modules/class/Camera.js';
+import {KeyData} from './modules/class/KeyData.js';
+import {CrossHair} from './modules/class/CrossHair.js';
 
 /**
  * In m^3 / kg*s^2
@@ -12,7 +14,9 @@ import {Camera} from './modules/class/Camera.js';
  */
 export const GRAVITATION_CONSTANT = 6.67430e-11; //m^3 / kg*s^2
 
-export const INITIAL_CAMERA_SCALE = 2e6;
+export const INITIAL_CAMERA_SCALE = 5e7;
+export const MIN_CAMERA_SCALE = 1e3;
+export const MAX_CAMERA_SCALE = 5e10;
 
 /**
  * In meters
@@ -99,7 +103,7 @@ const RADIUS = {
  * @param distance
  * @returns {number}
  */
-function getCircumference(distance) {
+export function getCircumference(distance) {
 	return 2 * Math.PI * distance;
 }
 
@@ -108,7 +112,7 @@ function getCircumference(distance) {
  * @param distance
  * @param period
  */
-function getOrbitalVelocity(distance, period) {
+export function getOrbitalVelocity(distance, period) {
 	let periodInSeconds = period * 24 * 60 * 60;
 	return getCircumference(distance) / periodInSeconds;
 }
@@ -129,6 +133,19 @@ function getOrbitalVelocity(distance, period) {
 	}
 
 	// INPUT LISTENERS
+
+	let keyData = new KeyData();
+
+	function keyListener(e) {
+		switch (e.type) {
+			case 'keydown':
+				keyData.events[e.key] = true;
+				break;
+			case 'keyup':
+				keyData.events[e.key] = false;
+				break;
+		}
+	}
 
 	let mouseData = new MouseData();
 	let lastMousePos = getCanvasCenterPosition();
@@ -176,7 +193,7 @@ function getOrbitalVelocity(distance, period) {
 		context.fillText(amt, 50, 70);
 	}
 
-	let camera = new Camera(getCanvasCenterPosition(), getCanvasCenterPosition(), INITIAL_CAMERA_SCALE);
+	let camera = new Camera(getCanvasCenterPosition(), getCanvasCenterPosition(), INITIAL_CAMERA_SCALE, MIN_CAMERA_SCALE, MAX_CAMERA_SCALE);
 
 	// APP LOOP AND SETUP
 
@@ -213,6 +230,20 @@ function getOrbitalVelocity(distance, period) {
 		frames++;
 
 		let scalingScale = 1.1;
+		let moveBy = 5;
+
+		if (keyData.events['ArrowLeft']) {
+			camera.move(- moveBy, 0);
+		}
+		if (keyData.events['ArrowRight']) {
+			camera.move(moveBy, 0);
+		}
+		if (keyData.events['ArrowUp']) {
+			camera.move(0, - moveBy);
+		}
+		if (keyData.events['ArrowDown']) {
+			camera.move(0, moveBy);
+		}
 
 		if (mouseData.events[0]) {
 			camera.scaleScale(1 / scalingScale);
@@ -235,8 +266,6 @@ function getOrbitalVelocity(distance, period) {
 		// necessary for chrome devtools
 		appObjectList = appObjectList;
 
-		camera.position = earth.position;
-
 		// DRAW ALL
 		for (let i = 0; i < appObjectList.length; i++) {
 			let cur = appObjectList[i];
@@ -258,7 +287,7 @@ function getOrbitalVelocity(distance, period) {
 		context.imageSmoothingEnabled = false;
 
 		// OBJECT SETUP
-		let sunPosition = new Position(0,0);
+		let crossHair = new CrossHair(camera);
 		let sun = new CelestialBody(sunPosition, MASS.SUN, RADIUS.SUN, new Vector(0, 0, sunPosition));
 		let mercuryPosition = sunPosition.add(new Vector(DISTANCE_FROM_SUN.MERCURY, 0));
 		let mercury = new CelestialBody(mercuryPosition, MASS.MERCURY, RADIUS.MERCURY,
@@ -299,7 +328,7 @@ function getOrbitalVelocity(distance, period) {
 		let uranusOrbit = new Orbit(sun, DISTANCE_FROM_SUN.URANUS, '#3bf');
 		let neptuneOrbit = new Orbit(sun, DISTANCE_FROM_SUN.NEPTUNE, '#37f');
 
-		appObjectList.push(mercuryOrbit);
+		appObjectList.push(crossHair);
 		appObjectList.push(venusOrbit);
 		appObjectList.push(earthOrbit);
 		appObjectList.push(moonOrbit);
@@ -316,6 +345,8 @@ function getOrbitalVelocity(distance, period) {
 		addEventListener('contextmenu', function(e) {
 			e.preventDefault();
 		}, false);
+		addEventListener('keydown', keyListener);
+		addEventListener('keyup', keyListener);
 
 		// GAME START
 		logicLoop();

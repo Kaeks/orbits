@@ -1,11 +1,11 @@
 import {Position} from './Position.js';
+import {ListenerData} from './ListenerData.js';
 
-export class MouseData {
+export class MouseData extends ListenerData {
 	position;
-	events;
 
 	constructor() {
+		super();
 		this.position = new Position(0,0);
-		this.events = [];
 	}
 }
