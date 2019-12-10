@@ -1,12 +1,12 @@
 import {Position} from './modules/class/Position.js';
 import {MouseData} from './modules/class/MouseData.js';
-import {CelestialBody} from './modules/class/CelestialBody.js';
 import {Vector} from './modules/class/Vector.js';
-import {Orbit} from './modules/class/Orbit.js';
 import {MovingObject} from './modules/class/MovingObject.js';
 import {Camera} from './modules/class/Camera.js';
 import {KeyData} from './modules/class/KeyData.js';
 import {CrossHair} from './modules/class/CrossHair.js';
+import {View} from './modules/class/View.js';
+import {JsonModelParser} from './modules/class/JsonModelParser.js';
 
 /**
  * In m^3 / kg*s^2
@@ -23,80 +23,6 @@ export const MAX_CAMERA_SCALE = 5e10;
  * @type {number}
  */
 export const ASTRONOMICAL_UNIT = 1.496e11;
-
-/**
- * In kilogrammes
- * @type {{VENUS: number, EARTH: number, MERCURY: number, NEPTUNE: number, MOON: number, MARS: number, SATURN: number, URANUS: number, SUN: number, JUPITER: number, PLUTO: number}}
- */
-const MASS = {
-	SUN: 1.989e30,
-	MERCURY: 3.301e23,
-	VENUS: 4.867e24,
-	EARTH: 5.972e24,
-	MOON: 7.346e22,
-	MARS: 6.417e23,
-	JUPITER: 1.899e27,
-	SATURN: 5.685e26,
-	URANUS: 8.862e25,
-	NEPTUNE: 1.024e26,
-	PLUTO: 1.471e22
-};
-
-/**
- * In meters
- * @type {{VENUS: number, EARTH: number, MERCURY: number, NEPTUNE: number, MARS: number, SATURN: number, URANUS: number, JUPITER: number, PLUTO: number}}
- */
-const DISTANCE_FROM_SUN =  {
-	MERCURY: 57.91e9,
-	VENUS: 108.2e9,
-	EARTH: 149.6e9,
-	MARS: 227.9e9,
-	JUPITER: 778.5e9,
-	SATURN: 1.434e12,
-	URANUS: 2.871e12,
-	NEPTUNE: 4.495e12,
-	PLUTO: 5.906e12
-};
-
-/**
- * In meters
- * @type {number}
- */
-const MOON_DISTANCE_FROM_EARTH =  384.4e6;
-
-/**
- * In days
- * @type {{VENUS: number, EARTH: number, MERCURY: number, NEPTUNE: number, MOON: number, MARS: number, URANUS: number, JUPITER: number, PLUTO: number}}
- */
-const ORBITAL_PERIOD = {
-	MERCURY: 88.0,
-	VENUS: 224.7,
-	EARTH: 365.2,
-	MOON: 27.3,
-	MARS: 687.0,
-	JUPITER: 4331,
-	URANUS: 10747,
-	NEPTUNE: 30589,
-	PLUTO: 90560
-};
-
-/**
- * In meters
- * @type {{VENUS: number, EARTH: number, MERCURY: number, NEPTUNE: number, MOON: number, MARS: number, SATURN: number, URANUS: number, SUN: number, JUPITER: number, PLUTO: number}}
- */
-const RADIUS = {
-	SUN: 695510e3,
-	MERCURY: 2439.7e3,
-	VENUS: 6051.8e3,
-	EARTH: 6371e3,
-	MOON: 1737.1e3,
-	MARS: 3389.5e3,
-	JUPITER: 69911e3,
-	SATURN: 58232e3,
-	URANUS: 25362e3,
-	NEPTUNE: 24622e3,
-	PLUTO: 1188.3e3
-};
 
 /**
  * In meters
@@ -117,23 +43,17 @@ export function getOrbitalVelocity(distance, period) {
 	return getCircumference(distance) / periodInSeconds;
 }
 
+async function getSolarSystemModelJson() {
+	return await fetch('app/models/SolarSystem.json').then(response => {
+		return response.json();
+	});
+}
+
 (function(canvas, context) {
-	// LIST OF ALL OBJECTS
-	let appObjectList = [];
-
-	// METHODS
-
-	/**
-	 * Get the center position of the canvas
-	 *
-	 * @returns {Position}
-	 */
-	function getCanvasCenterPosition() {
-		return new Position(canvas.clientWidth / 2, canvas.clientHeight / 2);
-	}
+	// VIEW
+	let activeView;
 
 	// INPUT LISTENERS
-
 	let keyData = new KeyData();
 
 	function keyListener(e) {
@@ -148,7 +68,7 @@ export function getOrbitalVelocity(distance, period) {
 	}
 
 	let mouseData = new MouseData();
-	let lastMousePos = getCanvasCenterPosition();
+	let lastMousePos;
 
 	function mouseListener(e) {
 		switch (e.type) {
@@ -157,12 +77,6 @@ export function getOrbitalVelocity(distance, period) {
 				break;
 			case 'mouseup':
 				mouseData.events[e.button] = false;
-				break;
-			case 'mousemove':
-				mouseData.position = new Position(e.clientX, e.clientY);
-				let vector = new Vector(mouseData.position.x - lastMousePos.x, mouseData.position.y - lastMousePos.y).multiply(2);
-				camera.position = camera.position.add(vector);
-				lastMousePos = mouseData.position;
 				break;
 		}
 	}
@@ -193,7 +107,7 @@ export function getOrbitalVelocity(distance, period) {
 		context.fillText(amt, 50, 70);
 	}
 
-	let camera = new Camera(getCanvasCenterPosition(), getCanvasCenterPosition(), INITIAL_CAMERA_SCALE, MIN_CAMERA_SCALE, MAX_CAMERA_SCALE);
+	let camera;
 
 	// APP LOOP AND SETUP
 
@@ -204,15 +118,15 @@ export function getOrbitalVelocity(distance, period) {
 	function logicLoop() {
 		updates++;
 		// UPDATE ALL
-		for (let i = 0; i < appObjectList.length; i++) {
-			let cur = appObjectList[i];
+		for (let i = 0; i < activeView.objectList.length; i++) {
+			let cur = activeView.objectList[i];
 			cur.update(mouseData);
 		}
 
-		for (let i = 0; i < appObjectList.length - 1; i++) {
-			let obj1 = appObjectList[i];
-			for (let j = i + 1; j < appObjectList.length; j++) {
-				let obj2 = appObjectList[j];
+		for (let i = 0; i < activeView.objectList.length - 1; i++) {
+			let obj1 = activeView.objectList[i];
+			for (let j = i + 1; j < activeView.objectList.length; j++) {
+				let obj2 = activeView.objectList[j];
 				if (obj1 instanceof MovingObject && obj2 instanceof MovingObject) {
 					applyGravity(obj1, obj2);
 				}
@@ -220,8 +134,6 @@ export function getOrbitalVelocity(distance, period) {
 		}
 		setTimeout(logicLoop, 0);
 	}
-
-	let earth;
 
 	function appLoop() {
 		// CLEAR FRAME
@@ -244,12 +156,10 @@ export function getOrbitalVelocity(distance, period) {
 		if (keyData.events['ArrowDown']) {
 			camera.move(0, moveBy);
 		}
-
-		if (mouseData.events[0]) {
-			camera.scaleScale(1 / scalingScale);
+		if (keyData.events['+']) {
+			camera.scaleScale(1 / scalingScale)
 		}
-
-		if (mouseData.events[2]) {
+		if (keyData.events['-']) {
 			camera.scaleScale(scalingScale);
 		}
 
@@ -264,18 +174,20 @@ export function getOrbitalVelocity(distance, period) {
 		}
 
 		// necessary for chrome devtools
-		appObjectList = appObjectList;
+		let objectList = activeView.objectList;
 
 		// DRAW ALL
-		for (let i = 0; i < appObjectList.length; i++) {
-			let cur = appObjectList[i];
+		for (let i = 0; i < activeView.objectList.length; i++) {
+			let cur = activeView.objectList[i];
 			cur.draw(context, camera);
 		}
 
 		requestAnimationFrame(appLoop);
 	}
 
-	function setup() {
+	let solarSystemView;
+
+	async function setup() {
 		// CANVAS SETUP
 		window.addEventListener("resize", function() {
 			canvas.width = canvas.clientWidth;
@@ -286,62 +198,28 @@ export function getOrbitalVelocity(distance, period) {
 		canvas.height = canvas.clientHeight;
 		context.imageSmoothingEnabled = false;
 
+		// VIEW SETUP
+		solarSystemView = new View(canvas, context);
+
+		// MODEL PARSER SETUP
+		let parser = new JsonModelParser(solarSystemView);
+
+		solarSystemView.setObjectList(parser.run(await getSolarSystemModelJson()));
+		activeView = solarSystemView;
+
+			// CAMERA SETUP
+			camera = new Camera(activeView.getCanvasCenterPosition(), activeView.getCanvasCenterPosition(), INITIAL_CAMERA_SCALE, MIN_CAMERA_SCALE, MAX_CAMERA_SCALE);
+
 		// OBJECT SETUP
+
 		let crossHair = new CrossHair(camera);
-		let sun = new CelestialBody(sunPosition, MASS.SUN, RADIUS.SUN, new Vector(0, 0, sunPosition));
-		let mercuryPosition = sunPosition.add(new Vector(DISTANCE_FROM_SUN.MERCURY, 0));
-		let mercury = new CelestialBody(mercuryPosition, MASS.MERCURY, RADIUS.MERCURY,
-			new Vector(0, getOrbitalVelocity(DISTANCE_FROM_SUN.MERCURY, ORBITAL_PERIOD.MERCURY), mercuryPosition));
-		let venusPosition = sunPosition.add(new Vector(DISTANCE_FROM_SUN.VENUS, 0));
-		let venus = new CelestialBody(venusPosition, MASS.VENUS, RADIUS.VENUS,
-			new Vector(0, getOrbitalVelocity(DISTANCE_FROM_SUN.VENUS, ORBITAL_PERIOD.VENUS), venusPosition));
-		let earthPosition = sunPosition.add(new Vector(DISTANCE_FROM_SUN.EARTH, 0));
-		earth = new CelestialBody(
-			earthPosition,
-			MASS.EARTH,
-			RADIUS.EARTH,
-			new Vector(0, getOrbitalVelocity(DISTANCE_FROM_SUN.EARTH, ORBITAL_PERIOD.EARTH), earthPosition)
-		);
-		let moonPosition = earth.position.add(new Vector(MOON_DISTANCE_FROM_EARTH, 0));
-		let moon = new CelestialBody(moonPosition, MASS.MOON, RADIUS.MOON,
-			new Vector(
-				0,
-				getOrbitalVelocity(DISTANCE_FROM_SUN.EARTH, ORBITAL_PERIOD.EARTH)
-				+ getOrbitalVelocity(MOON_DISTANCE_FROM_EARTH, ORBITAL_PERIOD.MOON), moonPosition
-			)
-		);
-
-		appObjectList.push(sun);
-		appObjectList.push(mercury);
-		appObjectList.push(venus);
-		appObjectList.push(earth);
-		appObjectList.push(moon);
-
-		// ORBITS
-		let mercuryOrbit = new Orbit(sun, DISTANCE_FROM_SUN.MERCURY, '#caa');
-		let venusOrbit = new Orbit(sun, DISTANCE_FROM_SUN.VENUS, '#fc8');
-		let earthOrbit = new Orbit(sun, DISTANCE_FROM_SUN.EARTH, '#77f');
-		let moonOrbit = new Orbit(earth, MOON_DISTANCE_FROM_EARTH, '#bbb');
-		let marsOrbit = new Orbit(sun, DISTANCE_FROM_SUN.MARS, '#a44');
-		let jupiterOrbit = new Orbit(sun, DISTANCE_FROM_SUN.JUPITER, '#f93');
-		let saturnOrbit = new Orbit(sun, DISTANCE_FROM_SUN.SATURN, '#ca3');
-		let uranusOrbit = new Orbit(sun, DISTANCE_FROM_SUN.URANUS, '#3bf');
-		let neptuneOrbit = new Orbit(sun, DISTANCE_FROM_SUN.NEPTUNE, '#37f');
-
-		appObjectList.push(crossHair);
-		appObjectList.push(venusOrbit);
-		appObjectList.push(earthOrbit);
-		appObjectList.push(moonOrbit);
-		appObjectList.push(marsOrbit);
-		appObjectList.push(jupiterOrbit);
-		appObjectList.push(saturnOrbit);
-		appObjectList.push(uranusOrbit);
-		appObjectList.push(neptuneOrbit);
+		activeView.addObject(crossHair);
 
 		// LISTENER SETUP
+		lastMousePos = activeView.getCanvasCenterPosition();
+
 		addEventListener('mousedown', mouseListener);
 		addEventListener('mouseup', mouseListener);
-		addEventListener('mousemove', mouseListener);
 		addEventListener('contextmenu', function(e) {
 			e.preventDefault();
 		}, false);

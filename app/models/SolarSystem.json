@@ -1,0 +1,120 @@
+{
+  "name": "SolarSystem",
+  "type": "model",
+  "bodies": [
+    {
+      "name": "sun",
+      "mass": 1.989e30,
+      "radius": 695510e3,
+      "color": "#ff0",
+      "position": {
+        "type": "centered"
+      },
+      "velocity": [0, 0],
+      "satellites": [
+        {
+          "name": "mercury",
+          "mass": 3.301e23,
+          "radius": 2439.7e3,
+          "color": "#caa",
+          "orbit": {
+            "distance": 57.91e9,
+            "period": 88.0
+          }
+        },
+        {
+          "name": "venus",
+          "mass": 4.867e24,
+          "radius": 6051.8e3,
+          "color": "#fc8",
+          "orbit": {
+            "distance": 108.2e9,
+            "period": 224.7
+          }
+        },
+        {
+          "name": "earth",
+          "mass": 5.972e24,
+          "radius": 6371e3,
+          "color": "#77f",
+          "orbit": {
+            "distance": 149.6e9,
+            "period": 365.2
+          },
+          "satellites": [
+            {
+              "name": "moon",
+              "mass": 7.346e22,
+              "radius": 1737.1e3,
+              "color": "#bbb",
+              "orbit": {
+                "distance": 384.4e6,
+                "period": 27.3
+              }
+            }
+          ]
+        },
+        {
+          "name": "mars",
+          "mass": 6.417e23,
+          "radius": 3389.5e3,
+          "color": "#a44",
+          "orbit": {
+            "distance": 227.9e9,
+            "period": 687.0
+          }
+        },
+        {
+          "name": "jupiter",
+          "mass": 1.899e27,
+          "radius": 69911e3,
+          "color": "#f93",
+          "orbit": {
+            "distance": 778.5e9,
+            "period": 4331
+          }
+        },
+        {
+          "name": "saturn",
+          "mass": 5.685e26,
+          "radius": 58232e3,
+          "color": "#ca3",
+          "orbit": {
+            "distance": 1.434e12,
+            "period": 10747
+          }
+        },
+        {
+          "name": "uranus",
+          "mass": 8.862e25,
+          "radius": 25362e3,
+          "color": "#3bf",
+          "orbit": {
+            "distance": 2.871e12,
+            "period": 30589
+          }
+        },
+        {
+          "name": "neptune",
+          "mass": 1.024e26,
+          "radius": 24622e3,
+          "color": "#37f",
+          "orbit": {
+            "distance": 4.495e12,
+            "period": 60190
+          }
+        },
+        {
+          "name": "pluto",
+          "mass": 1.471e22,
+          "radius": 1188.3e3,
+          "color": "#b88",
+          "orbit": {
+            "distance": 5.906e12,
+            "period": 90560
+          }
+        }
+      ]
+    }
+  ]
+}
