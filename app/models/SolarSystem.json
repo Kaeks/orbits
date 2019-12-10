@@ -19,7 +19,7 @@
           "color": "#caa",
           "orbit": {
             "distance": 57.91e9,
-            "orbitalPeriod": 88.0
+            "period": 88.0
           }
         },
         {
@@ -29,7 +29,7 @@
           "color": "#fc8",
           "orbit": {
             "distance": 108.2e9,
-            "orbitalPeriod": 224.7
+            "period": 224.7
           }
         },
         {
@@ -39,7 +39,7 @@
           "color": "#77f",
           "orbit": {
             "distance": 149.6e9,
-            "orbitalPeriod": 365.2
+            "period": 365.2
           },
           "satellites": [
             {
@@ -49,7 +49,7 @@
               "color": "#bbb",
               "orbit": {
                 "distance": 384.4e6,
-                "orbitalPeriod": 27.3
+                "period": 27.3
               }
             }
           ]
@@ -61,7 +61,7 @@
           "color": "#a44",
           "orbit": {
             "distance": 227.9e9,
-            "orbitalPeriod": 687.0
+            "period": 687.0
           }
         },
         {
@@ -71,7 +71,7 @@
           "color": "#f93",
           "orbit": {
             "distance": 778.5e9,
-            "orbitalPeriod": 4331
+            "period": 4331
           }
         },
         {
@@ -81,7 +81,7 @@
           "color": "#ca3",
           "orbit": {
             "distance": 1.434e12,
-            "orbitalPeriod": 10747
+            "period": 10747
           }
         },
         {
@@ -91,7 +91,7 @@
           "color": "#3bf",
           "orbit": {
             "distance": 2.871e12,
-            "orbitalPeriod": 30589
+            "period": 30589
           }
         },
         {
@@ -101,7 +101,7 @@
           "color": "#37f",
           "orbit": {
             "distance": 4.495e12,
-            "orbitalPeriod": 60190
+            "period": 60190
           }
         },
         {
@@ -111,7 +111,7 @@
           "color": "#b88",
           "orbit": {
             "distance": 5.906e12,
-            "orbitalPeriod": 90560
+            "period": 90560
           }
         }
       ]
