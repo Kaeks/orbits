@@ -5,6 +5,8 @@ import {MovingObject} from './modules/class/MovingObject.js';
 import {Camera} from './modules/class/Camera.js';
 import {KeyData} from './modules/class/KeyData.js';
 import {CrossHair} from './modules/class/CrossHair.js';
+import {View} from './modules/class/View.js';
+import {JsonModelParser} from './modules/class/JsonModelParser.js';
 
 /**
  * In m^3 / kg*s^2
@@ -41,23 +43,17 @@ export function getOrbitalVelocity(distance, period) {
 	return getCircumference(distance) / periodInSeconds;
 }
 
+async function getSolarSystemModelJson() {
+	return await fetch('app/models/SolarSystem.json').then(response => {
+		return response.json();
+	});
+}
+
 (function(canvas, context) {
-	// LIST OF ALL OBJECTS
-	let appObjectList = [];
-
-	// METHODS
-
-	/**
-	 * Get the center position of the canvas
-	 *
-	 * @returns {Position}
-	 */
-	function getCanvasCenterPosition() {
-		return new Position(canvas.clientWidth / 2, canvas.clientHeight / 2);
-	}
+	// VIEW
+	let activeView;
 
 	// INPUT LISTENERS
-
 	let keyData = new KeyData();
 
 	function keyListener(e) {
@@ -72,7 +68,7 @@ export function getOrbitalVelocity(distance, period) {
 	}
 
 	let mouseData = new MouseData();
-	let lastMousePos = getCanvasCenterPosition();
+	let lastMousePos;
 
 	function mouseListener(e) {
 		switch (e.type) {
@@ -81,12 +77,6 @@ export function getOrbitalVelocity(distance, period) {
 				break;
 			case 'mouseup':
 				mouseData.events[e.button] = false;
-				break;
-			case 'mousemove':
-				mouseData.position = new Position(e.clientX, e.clientY);
-				let vector = new Vector(mouseData.position.x - lastMousePos.x, mouseData.position.y - lastMousePos.y).multiply(2);
-				camera.position = camera.position.add(vector);
-				lastMousePos = mouseData.position;
 				break;
 		}
 	}
@@ -117,7 +107,7 @@ export function getOrbitalVelocity(distance, period) {
 		context.fillText(amt, 50, 70);
 	}
 
-	let camera = new Camera(getCanvasCenterPosition(), getCanvasCenterPosition(), INITIAL_CAMERA_SCALE, MIN_CAMERA_SCALE, MAX_CAMERA_SCALE);
+	let camera;
 
 	// APP LOOP AND SETUP
 
@@ -128,15 +118,15 @@ export function getOrbitalVelocity(distance, period) {
 	function logicLoop() {
 		updates++;
 		// UPDATE ALL
-		for (let i = 0; i < appObjectList.length; i++) {
-			let cur = appObjectList[i];
+		for (let i = 0; i < activeView.objectList.length; i++) {
+			let cur = activeView.objectList[i];
 			cur.update(mouseData);
 		}
 
-		for (let i = 0; i < appObjectList.length - 1; i++) {
-			let obj1 = appObjectList[i];
-			for (let j = i + 1; j < appObjectList.length; j++) {
-				let obj2 = appObjectList[j];
+		for (let i = 0; i < activeView.objectList.length - 1; i++) {
+			let obj1 = activeView.objectList[i];
+			for (let j = i + 1; j < activeView.objectList.length; j++) {
+				let obj2 = activeView.objectList[j];
 				if (obj1 instanceof MovingObject && obj2 instanceof MovingObject) {
 					applyGravity(obj1, obj2);
 				}
@@ -186,18 +176,20 @@ export function getOrbitalVelocity(distance, period) {
 		}
 
 		// necessary for chrome devtools
-		appObjectList = appObjectList;
+		let objectList = activeView.objectList;
 
 		// DRAW ALL
-		for (let i = 0; i < appObjectList.length; i++) {
-			let cur = appObjectList[i];
+		for (let i = 0; i < activeView.objectList.length; i++) {
+			let cur = activeView.objectList[i];
 			cur.draw(context, camera);
 		}
 
 		requestAnimationFrame(appLoop);
 	}
 
-	function setup() {
+	let solarSystemView;
+
+	async function setup() {
 		// CANVAS SETUP
 		window.addEventListener("resize", function() {
 			canvas.width = canvas.clientWidth;
@@ -208,15 +200,28 @@ export function getOrbitalVelocity(distance, period) {
 		canvas.height = canvas.clientHeight;
 		context.imageSmoothingEnabled = false;
 
-		// OBJECT SETUP
-		let crossHair = new CrossHair(camera);
+		// VIEW SETUP
+		solarSystemView = new View(canvas, context);
 
-		appObjectList.push(crossHair);
+		// MODEL PARSER SETUP
+		let parser = new JsonModelParser(solarSystemView);
+
+		solarSystemView.setObjectList(parser.run(await getSolarSystemModelJson()));
+		activeView = solarSystemView;
+
+			// CAMERA SETUP
+			camera = new Camera(activeView.getCanvasCenterPosition(), activeView.getCanvasCenterPosition(), INITIAL_CAMERA_SCALE, MIN_CAMERA_SCALE, MAX_CAMERA_SCALE);
+
+		// OBJECT SETUP
+
+		let crossHair = new CrossHair(camera);
+		activeView.addObject(crossHair);
 
 		// LISTENER SETUP
+		lastMousePos = activeView.getCanvasCenterPosition();
+
 		addEventListener('mousedown', mouseListener);
 		addEventListener('mouseup', mouseListener);
-		addEventListener('mousemove', mouseListener);
 		addEventListener('contextmenu', function(e) {
 			e.preventDefault();
 		}, false);
