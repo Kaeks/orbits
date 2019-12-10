@@ -156,12 +156,10 @@ async function getSolarSystemModelJson() {
 		if (keyData.events['ArrowDown']) {
 			camera.move(0, moveBy);
 		}
-
-		if (mouseData.events[0]) {
-			camera.scaleScale(1 / scalingScale);
+		if (keyData.events['+']) {
+			camera.scaleScale(1 / scalingScale)
 		}
-
-		if (mouseData.events[2]) {
+		if (keyData.events['-']) {
 			camera.scaleScale(scalingScale);
 		}
 
