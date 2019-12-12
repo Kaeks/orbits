@@ -1,4 +1,5 @@
 export class AppObject {
+	/** @type {ViewPosition} */
 	position;
 	isVisible = true;
 

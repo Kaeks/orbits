@@ -11,7 +11,7 @@ export class CelestialBody extends MovingObject {
 
 	draw(context, camera) {
 		super.draw(context, camera);
-		let realPosition = this.position.getRealPosition(camera);
+		let realPosition = this.position.getCanvasPosition(camera);
 		context.fillStyle = this.color;
 		context.beginPath();
 		let adjustedRadius = this.radius / camera.scale;

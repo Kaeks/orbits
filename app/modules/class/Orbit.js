@@ -21,7 +21,7 @@ export class Orbit extends AppObject {
 		super.draw(context, camera);
 		context.strokeStyle = this.color;
 		context.beginPath();
-		let realPosition = this.position.getRealPosition(camera);
+		let realPosition = this.position.getCanvasPosition(camera);
 		let adjustedRadius = this.radius / camera.scale;
 		context.arc(realPosition.x, realPosition.y, adjustedRadius, 0, 2 * Math.PI);
 		context.stroke();
