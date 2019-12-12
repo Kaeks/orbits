@@ -9,6 +9,7 @@ import {JsonModelParser} from './modules/class/JsonModelParser.js';
 import {GhostCelestialBody} from './modules/class/GhostCelestialBody.js';
 import {ViewPosition} from './modules/class/ViewPosition.js';
 import {CanvasPosition} from './modules/class/CanvasPosition.js';
+import {CelestialBody} from './modules/class/CelestialBody.js';
 
 /**
  * In m^3 / kg*s^2
@@ -99,6 +100,9 @@ async function getSolarSystemModelJson() {
 					ghostObject = null;
 					activeView.addObject(newObject);
 				}
+				if (e.button === 2) {
+					spawnLots(8e25, 400000);
+				}
 				break;
 			case 'mousemove':
 				mouseData.position = new CanvasPosition(e.clientX, e.clientY);
@@ -122,6 +126,32 @@ async function getSolarSystemModelJson() {
 
 	function checkCollision(obj1, obj2) {
 		return getDistance(obj1, obj2) <= obj1.radius + obj2.radius;
+	}
+
+	function placeApart(obj1, obj2) {
+		let intendedDistance = obj1.radius + obj2.radius;
+		let connectionVector = new Vector(obj2.position.x - obj1.position.x, obj2.position.y - obj1.position.y);
+		let actualDistance = connectionVector.getLength();
+		let diff = intendedDistance - actualDistance;
+		let normalized = connectionVector.normalize();
+		obj1.position = obj1.position.add(normalized.multiply(- diff / 2));
+		obj2.position = obj2.position.add(normalized.multiply(diff / 2));
+	}
+
+	function spawnLots(mass, radius, amount = 12, distance = 5000000) {
+		let center = mouseData.position.getViewPosition(camera);
+		for (let i = 0; i < amount; i++) {
+			let angle = i * 360 / amount;
+			let randomizedDistance = getRandomInt(distance - 1000000, distance + 1000000);
+			let vector = new Vector(randomizedDistance * Math.sin(angle * Math.PI / 180), randomizedDistance * Math.cos(angle * Math.PI / 180), center);
+			let newPosition = center.add(vector);
+			let newObject = new CelestialBody(newPosition, mass, radius, new Vector(0, 0), '#fff');
+			activeView.addObject(newObject);
+		}
+	}
+
+	function getRandomInt(min, max) {
+		return Math.floor(Math.random() * (max - min)) + min;
 	}
 
 	function displayFPS(amt) {
@@ -165,9 +195,10 @@ async function getSolarSystemModelJson() {
 				let obj2 = activeView.objectList[j];
 				if (obj1 instanceof MovingObject && obj2 instanceof MovingObject) {
 					if (checkCollision(obj1, obj2)) {
+						placeApart(obj1, obj2);
 						let newVelocity = obj1.velocity.multiply(obj1.mass).add(obj2.velocity.multiply(obj2.mass)).multiply(1 / (obj1.mass + obj2.mass));
-						obj1.setVelocity(newVelocity.x, newVelocity.y);
-						obj2.setVelocity(newVelocity.x, newVelocity.y);
+						//obj1.setVelocity(newVelocity.x, newVelocity.y);
+						//obj2.setVelocity(newVelocity.x, newVelocity.y);
 					} else {
 						applyGravity(obj1, obj2);
 					}
