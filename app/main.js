@@ -124,6 +124,16 @@ async function getSolarSystemModelJson() {
 		return getDistance(obj1, obj2) <= obj1.radius + obj2.radius;
 	}
 
+	function placeApart(obj1, obj2) {
+		let intendedDistance = obj1.radius + obj2.radius;
+		let connectionVector = new Vector(obj2.position.x - obj1.position.x, obj2.position.y - obj1.position.y);
+		let actualDistance = connectionVector.getLength();
+		let diff = intendedDistance - actualDistance;
+		let normalized = connectionVector.normalize();
+		obj1.position = obj1.position.add(normalized.multiply(- diff / 2));
+		obj2.position = obj2.position.add(normalized.multiply(diff / 2));
+	}
+
 	function displayFPS(amt) {
 		context.fillStyle = '#fff';
 		context.font = '24px Arial';
@@ -165,9 +175,10 @@ async function getSolarSystemModelJson() {
 				let obj2 = activeView.objectList[j];
 				if (obj1 instanceof MovingObject && obj2 instanceof MovingObject) {
 					if (checkCollision(obj1, obj2)) {
+						placeApart(obj1, obj2);
 						let newVelocity = obj1.velocity.multiply(obj1.mass).add(obj2.velocity.multiply(obj2.mass)).multiply(1 / (obj1.mass + obj2.mass));
-						obj1.setVelocity(newVelocity.x, newVelocity.y);
-						obj2.setVelocity(newVelocity.x, newVelocity.y);
+						//obj1.setVelocity(newVelocity.x, newVelocity.y);
+						//obj2.setVelocity(newVelocity.x, newVelocity.y);
 					} else {
 						applyGravity(obj1, obj2);
 					}
