@@ -6,6 +6,7 @@ import {KeyData} from './modules/class/KeyData.js';
 import {CrossHair} from './modules/class/CrossHair.js';
 import {View} from './modules/class/View.js';
 import {JsonModelParser} from './modules/class/JsonModelParser.js';
+import {GhostCelestialBody} from './modules/class/GhostCelestialBody.js';
 import {ViewPosition} from './modules/class/ViewPosition.js';
 import {CanvasPosition} from './modules/class/CanvasPosition.js';
 
@@ -79,13 +80,26 @@ async function getSolarSystemModelJson() {
 
 	let mouseData = new MouseData();
 
+	let ghostObject;
+
 	function mouseListener(e) {
 		switch (e.type) {
 			case 'mousedown':
 				mouseData.events[e.button] = true;
+				if (e.button === 0) {
+					console.log('mb 1 down at: x:' + mouseData.position.x + ', y:' + mouseData.position.y);
+					ghostObject = new GhostCelestialBody(mouseData.position.getViewPosition(camera));
+				}
 				break;
 			case 'mouseup':
 				mouseData.events[e.button] = false;
+				if (e.button === 0) {
+					console.log('mb 1 up at: x:' + mouseData.position.x + ', y:' + mouseData.position.y);
+					let newObject = ghostObject.createReal();
+					ghostObject = null;
+					activeView.addObject(newObject);
+				}
+				break;
 			case 'mousemove':
 				mouseData.position = new CanvasPosition(e.clientX, e.clientY);
 				break;
@@ -138,6 +152,13 @@ async function getSolarSystemModelJson() {
 			cur.update(mouseData);
 		}
 
+		if (ghostObject) {
+			ghostObject.update(mouseData);
+			let mousePosition = mouseData.position.getViewPosition(camera);
+			let initialPosition = ghostObject.initialPosition;
+			ghostObject.projectedVelocity = new Vector(mousePosition.x - initialPosition.x, mousePosition.y - initialPosition.y, ghostObject.position).multiply(- 1 / 1000);
+		}
+
 		for (let i = 0; i < activeView.objectList.length - 1; i++) {
 			let obj1 = activeView.objectList[i];
 			for (let j = i + 1; j < activeView.objectList.length; j++) {
@@ -184,6 +205,10 @@ async function getSolarSystemModelJson() {
 			camera.scaleScale(scalingScale);
 		}
 
+		if (mouseData.events[0]) {
+			ghostObject.increaseRadius();
+		}
+
 		let now = new Date();
 		let diff = now.valueOf() - started.valueOf();
 		displayFPS(Math.floor(frames / (diff / 1000)));
@@ -202,6 +227,8 @@ async function getSolarSystemModelJson() {
 			let cur = activeView.objectList[i];
 			cur.draw(context, camera);
 		}
+
+		if (ghostObject) ghostObject.draw(context, camera);
 
 		requestAnimationFrame(appLoop);
 	}
