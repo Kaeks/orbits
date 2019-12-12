@@ -24,8 +24,8 @@ export class Meter extends StaticScreenObject {
 		super.update(mouseData);
 	}
 
-	draw(context, cameraPosition) {
-		super.draw(context, cameraPosition);
+	draw(context, camera) {
+		super.draw(context, camera);
 		context.fillStyle = '#fff';
 		context.strokeStyle = '#f00';
 		context.beginPath();

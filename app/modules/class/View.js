@@ -1,4 +1,4 @@
-import {Position} from './Position.js';
+import {CanvasPosition} from './CanvasPosition.js';
 
 export class View {
 	canvas;
@@ -15,15 +15,21 @@ export class View {
 		this.objectList.push(object);
 	}
 
+	removeObject(object) {
+		this.objectList.find(element => {
+			return element === object;
+		});
+	}
+
 	setObjectList(objectList) {
 		this.objectList = objectList;
 	}
 
 	/**
 	 * Get the center position of the canvas
-	 * @returns {Position}
+	 * @returns {CanvasPosition}
 	 */
 	getCanvasCenterPosition() {
-		return new Position(this.canvas.clientWidth / 2, this.canvas.clientHeight / 2);
+		return new CanvasPosition(this.canvas.clientWidth / 2, this.canvas.clientHeight / 2);
 	}
 }

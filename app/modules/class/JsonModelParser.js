@@ -1,6 +1,6 @@
 import * as JsonModelType from '../enum/JsonModelType.js';
 import * as JsonModelPositionType from '../enum/JsonModelPositionType.js';
-import {Position} from './Position.js';
+import {ViewPosition} from './ViewPosition.js';
 import {CelestialBody} from './CelestialBody.js';
 import {Vector} from './Vector.js';
 import {Orbit} from './Orbit.js';
@@ -9,6 +9,9 @@ import {getOrbitalVelocity} from '../../main.js';
 export class JsonModelParser {
 	view;
 
+	/**
+	 * @param {View} view
+	 */
 	constructor(view) {
 		this.view = view;
 	}
@@ -91,9 +94,9 @@ export class JsonModelParser {
 		if (!position) return;
 		switch(position.type) {
 			case JsonModelPositionType.CENTERED:
-				return this.view.getCanvasCenterPosition();
+				return new ViewPosition(0, 0);
 			case JsonModelPositionType.PRECISE:
-				return new Position(position.value[0], position.value[1]);
+				return new ViewPosition(position.value[0], position.value[1]);
 		}
 	}
 }

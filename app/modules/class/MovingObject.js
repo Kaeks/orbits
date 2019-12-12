@@ -16,6 +16,11 @@ export class MovingObject extends AppObject {
 		this.velocity.start = position;
 	}
 
+	setVelocity(x, y) {
+		this.velocity.x = x;
+		this.velocity.y = y;
+	}
+
 	/**
 	 * Applies a force to this object
 	 * @param {Number} force
@@ -28,7 +33,6 @@ export class MovingObject extends AppObject {
 
 	applyAcceleration(vector) {
 		this.velocity = this.velocity.add(vector);
-		//console.log('Velocity is now x:' + this.velocity.x + ', y:' + this.velocity.y);
 	}
 
 	applyVelocity() {

@@ -1,4 +1,3 @@
-import {Position} from './modules/class/Position.js';
 import {MouseData} from './modules/class/MouseData.js';
 import {Vector} from './modules/class/Vector.js';
 import {MovingObject} from './modules/class/MovingObject.js';
@@ -7,6 +6,9 @@ import {KeyData} from './modules/class/KeyData.js';
 import {CrossHair} from './modules/class/CrossHair.js';
 import {View} from './modules/class/View.js';
 import {JsonModelParser} from './modules/class/JsonModelParser.js';
+import {GhostCelestialBody} from './modules/class/GhostCelestialBody.js';
+import {ViewPosition} from './modules/class/ViewPosition.js';
+import {CanvasPosition} from './modules/class/CanvasPosition.js';
 
 /**
  * In m^3 / kg*s^2
@@ -31,6 +33,15 @@ export const ASTRONOMICAL_UNIT = 1.496e11;
  */
 export function getCircumference(distance) {
 	return 2 * Math.PI * distance;
+}
+
+/**
+ * In meters cubed
+ * @param radius
+ * @returns {number}
+ */
+export function getVolume(radius) {
+	return 4/3 * Math.PI * radius;
 }
 
 /**
@@ -68,15 +79,29 @@ async function getSolarSystemModelJson() {
 	}
 
 	let mouseData = new MouseData();
-	let lastMousePos;
+
+	let ghostObject;
 
 	function mouseListener(e) {
 		switch (e.type) {
 			case 'mousedown':
 				mouseData.events[e.button] = true;
+				if (e.button === 0) {
+					console.log('mb 1 down at: x:' + mouseData.position.x + ', y:' + mouseData.position.y);
+					ghostObject = new GhostCelestialBody(mouseData.position.getViewPosition(camera));
+				}
 				break;
 			case 'mouseup':
 				mouseData.events[e.button] = false;
+				if (e.button === 0) {
+					console.log('mb 1 up at: x:' + mouseData.position.x + ', y:' + mouseData.position.y);
+					let newObject = ghostObject.createReal();
+					ghostObject = null;
+					activeView.addObject(newObject);
+				}
+				break;
+			case 'mousemove':
+				mouseData.position = new CanvasPosition(e.clientX, e.clientY);
 				break;
 		}
 	}
@@ -93,6 +118,10 @@ async function getSolarSystemModelJson() {
 		let f = GRAVITATION_CONSTANT * ((obj1.mass * obj2.mass) / getDistance(obj1, obj2) ** 2);
 		obj1.applyForce(f, getVectorFromTo(obj1, obj2).normalize());
 		obj2.applyForce(f, getVectorFromTo(obj2, obj1).normalize());
+	}
+
+	function checkCollision(obj1, obj2) {
+		return getDistance(obj1, obj2) <= obj1.radius + obj2.radius;
 	}
 
 	function displayFPS(amt) {
@@ -123,12 +152,25 @@ async function getSolarSystemModelJson() {
 			cur.update(mouseData);
 		}
 
+		if (ghostObject) {
+			ghostObject.update(mouseData);
+			let mousePosition = mouseData.position.getViewPosition(camera);
+			let initialPosition = ghostObject.initialPosition;
+			ghostObject.projectedVelocity = new Vector(mousePosition.x - initialPosition.x, mousePosition.y - initialPosition.y, ghostObject.position).multiply(- 1 / 1000);
+		}
+
 		for (let i = 0; i < activeView.objectList.length - 1; i++) {
 			let obj1 = activeView.objectList[i];
 			for (let j = i + 1; j < activeView.objectList.length; j++) {
 				let obj2 = activeView.objectList[j];
 				if (obj1 instanceof MovingObject && obj2 instanceof MovingObject) {
-					applyGravity(obj1, obj2);
+					if (checkCollision(obj1, obj2)) {
+						let newVelocity = obj1.velocity.multiply(obj1.mass).add(obj2.velocity.multiply(obj2.mass)).multiply(1 / (obj1.mass + obj2.mass));
+						obj1.setVelocity(newVelocity.x, newVelocity.y);
+						obj2.setVelocity(newVelocity.x, newVelocity.y);
+					} else {
+						applyGravity(obj1, obj2);
+					}
 				}
 			}
 		}
@@ -163,6 +205,10 @@ async function getSolarSystemModelJson() {
 			camera.scaleScale(scalingScale);
 		}
 
+		if (mouseData.events[0]) {
+			ghostObject.increaseRadius();
+		}
+
 		let now = new Date();
 		let diff = now.valueOf() - started.valueOf();
 		displayFPS(Math.floor(frames / (diff / 1000)));
@@ -181,6 +227,8 @@ async function getSolarSystemModelJson() {
 			let cur = activeView.objectList[i];
 			cur.draw(context, camera);
 		}
+
+		if (ghostObject) ghostObject.draw(context, camera);
 
 		requestAnimationFrame(appLoop);
 	}
@@ -207,22 +255,20 @@ async function getSolarSystemModelJson() {
 		solarSystemView.setObjectList(parser.run(await getSolarSystemModelJson()));
 		activeView = solarSystemView;
 
-			// CAMERA SETUP
-			camera = new Camera(activeView.getCanvasCenterPosition(), activeView.getCanvasCenterPosition(), INITIAL_CAMERA_SCALE, MIN_CAMERA_SCALE, MAX_CAMERA_SCALE);
+		// CAMERA SETUP
+		camera = new Camera(new ViewPosition(0, 0), activeView.getCanvasCenterPosition(), INITIAL_CAMERA_SCALE, MIN_CAMERA_SCALE, MAX_CAMERA_SCALE);
 
 		// OBJECT SETUP
-
 		let crossHair = new CrossHair(camera);
 		activeView.addObject(crossHair);
 
 		// LISTENER SETUP
-		lastMousePos = activeView.getCanvasCenterPosition();
-
 		addEventListener('mousedown', mouseListener);
 		addEventListener('mouseup', mouseListener);
 		addEventListener('contextmenu', function(e) {
 			e.preventDefault();
 		}, false);
+		addEventListener('mousemove', mouseListener);
 		addEventListener('keydown', keyListener);
 		addEventListener('keyup', keyListener);
 
@@ -232,5 +278,5 @@ async function getSolarSystemModelJson() {
 	}
 
 	// Entry point
-	setup();
+	setup().catch(console.error);
 }(document.querySelector('canvas'), document.querySelector('canvas').getContext('2d')));

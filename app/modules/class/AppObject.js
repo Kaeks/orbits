@@ -1,4 +1,5 @@
 export class AppObject {
+	/** @type {ViewPosition} */
 	position;
 	isVisible = true;
 
@@ -28,7 +29,7 @@ export class AppObject {
 	update(mouseData) {
 	}
 
-	draw(context, cameraPosition) {
+	draw(context, camera) {
 	}
 
 }
