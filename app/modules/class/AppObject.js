@@ -28,7 +28,7 @@ export class AppObject {
 	update(mouseData) {
 	}
 
-	draw(context, cameraPosition) {
+	draw(context, camera) {
 	}
 
 }

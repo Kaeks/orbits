@@ -232,5 +232,5 @@ async function getSolarSystemModelJson() {
 	}
 
 	// Entry point
-	setup();
+	setup().catch(console.error);
 }(document.querySelector('canvas'), document.querySelector('canvas').getContext('2d')));

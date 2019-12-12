@@ -13,8 +13,8 @@ export class CrossHair extends StaticScreenObject {
 		super.update(mouseData);
 	}
 
-	draw(context, cameraPosition) {
-		super.draw(context, cameraPosition);
+	draw(context, camera) {
+		super.draw(context, camera);
 		context.strokeStyle = this.color;
 		context.moveTo(this.position.x - 5, this.position.y);
 		context.lineTo(this.position.x + 5, this.position.y);
